@@ -1,0 +1,62 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 8e9ef0025c125c78294693f6f513e20c7c8356919d46eca5be4230214be23f33
+
+name:           pfp-final
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/YCLTW1995/pfp-final#readme>
+homepage:       https://github.com/YCLTW1995/pfp-final#readme
+bug-reports:    https://github.com/YCLTW1995/pfp-final/issues
+author:         Yung-Ching, Lin
+maintainer:     yl4337@columbia.edu
+copyright:      2020 PFP Final Project
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/YCLTW1995/pfp-final
+
+library
+  exposed-modules:
+      Lib
+  other-modules:
+      Paths_pfp_final
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+  default-language: Haskell2010
+
+executable pfp-final-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_pfp_final
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , pfp-final
+  default-language: Haskell2010
+
+test-suite pfp-final-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_pfp_final
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , pfp-final
+  default-language: Haskell2010
