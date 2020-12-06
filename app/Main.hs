@@ -3,7 +3,7 @@
 import Control.Monad(join, mplus)
 import Control.Comonad -- hackage
 import Data.Array
-
+import Control.Parallel.Strategies
 import Data.Foldable(toList)
 
 (!?) :: Ix i => Array i e -> i -> Maybe e
@@ -18,24 +18,31 @@ data PArray i f = i :. Array i f
 
 instance Ix i => Comonad (PArray i) where -- possibility of parallelism here
     extract (j:.a) = a ! j
-    f `extend` (j:.a) = j :. listArray bds (fmap (f . flip (:.) a) (range bds))
+    f `extend` (j:.a) = j :. listArray bds (runEval (parMAP  (f . flip (:.) a) (range bds)))
         where bds = bounds a
 
     --f `extend` (i :. a) = i :. listArray (bounds a) (f . (:. a) <$> indices a)
     -- http://blog.sigfpe.com/2008/03/comonadic-arrays.html
 
 
-
+parMAP :: (a -> b) -> [a] -> Eval [b]
+parMAP _ [] = return []
+parMAP f (a:as) = do 
+  b <- rpar (f a)
+  bs <- parMAP f as 
+  return (b:bs)
 
 type LocOp i f = PArray i (Maybe f) -> Maybe f
 
 -- I think these can be combined into one using the graph laplacian,
 -- which would also allow for more parallelism
+
 lap1 :: Num f => LocOp Int f
-lap1 pa@(i:.a) = do l <- join $ a !? (i - 1)
-                    r <- join $ a !? (i + 1)
-                    c <- extract pa
-                    return $ l + r - 2 * c
+lap1 pa @ (i :. a) = do l <- join $ a !? (i - 1)
+                        r <- join $ a !? (i + 1)
+                        c <- extract pa
+                        return $ l + r - 2 * c
+                  
 
 lap2 :: Num f => LocOp (Int, Int) f
 lap2 pa@((x,y):.a) = do n <- join $ a !? (x, y + 1)
@@ -75,6 +82,8 @@ main = do
   let a1 = 0 :. listArray (0, 10) (replicate 11 $ Just 0)
   let l1 = execution bdiff1 a1
 
+  let result = l1 !! 10000
+  print $ result
   putStrLn "Main Function Done"
 
 

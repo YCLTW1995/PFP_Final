@@ -36,6 +36,8 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -O2
+    - -eventlog
     dependencies:
     - pfp-final
 
