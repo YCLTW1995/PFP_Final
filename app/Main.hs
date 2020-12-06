@@ -86,7 +86,7 @@ main = do
   print $ result
   putStrLn "Main Function Done"
 
-
+-- use "stack exec -- pfp-final-exe +RTS -N2 -ls" to records event 
 
 {-
 -- example 
