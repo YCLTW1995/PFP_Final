@@ -5,6 +5,8 @@ import Control.Comonad -- hackage
 import Data.Array
 import Control.Parallel.Strategies
 import Data.Foldable(toList)
+import Control.Monad.Par
+
 
 (!?) :: Ix i => Array i e -> i -> Maybe e
 a !? j | bounds a `inRange` j = Just (a ! j)
@@ -18,19 +20,21 @@ data PArray i f = i :. Array i f
 
 instance Ix i => Comonad (PArray i) where -- possibility of parallelism here
     extract (j:.a) = a ! j
-    f `extend` (j:.a) = j :. listArray bds (runEval (parMAP  (f . flip (:.) a) (range bds)))
+    f `extend` (j:.a) = j :. listArray bds (fmap (f . flip (:.) a) (range bds) `using` parLIST rseq)
         where bds = bounds a
-
-    --f `extend` (i :. a) = i :. listArray (bounds a) (f . (:. a) <$> indices a)
     -- http://blog.sigfpe.com/2008/03/comonadic-arrays.html
 
 
-parMAP :: (a -> b) -> [a] -> Eval [b]
+parLIST:: Strategy a -> Strategy [a]
+parLIST s = parMAP (rparWith s)
+
+parMAP :: Strategy a -> Strategy [a]
 parMAP _ [] = return []
 parMAP f (a:as) = do 
-  b <- rpar (f a)
+  b <-  (f a)
   bs <- parMAP f as 
   return (b:bs)
+
 
 type LocOp i f = PArray i (Maybe f) -> Maybe f
 

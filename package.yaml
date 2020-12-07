@@ -24,6 +24,7 @@ dependencies:
 - array
 - comonad
 - parallel
+- monad-par
 
 library:
   source-dirs: src
