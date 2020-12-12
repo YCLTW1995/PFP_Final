@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3a19916fa84836c009940c09171ee9092539e201adada0b0a78f3ca56452dfa8
+-- hash: c2430505024ccd0d905e1ae2678842fe4c81a370f216e8c5b5888bf3aa583339
 
 name:           pfp-final
 version:        0.1.0.0
@@ -36,6 +36,7 @@ library
       array
     , base >=4.7 && <5
     , comonad
+    , deepseq
     , monad-par
     , parallel
   default-language: Haskell2010
@@ -51,6 +52,7 @@ executable pfp-final-exe
       array
     , base >=4.7 && <5
     , comonad
+    , deepseq
     , monad-par
     , parallel
     , pfp-final
@@ -68,6 +70,7 @@ test-suite pfp-final-test
       array
     , base >=4.7 && <5
     , comonad
+    , deepseq
     , monad-par
     , parallel
     , pfp-final

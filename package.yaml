@@ -25,7 +25,7 @@ dependencies:
 - comonad
 - parallel
 - monad-par
-
+- deepseq
 library:
   source-dirs: src
 
