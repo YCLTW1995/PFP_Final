@@ -21,8 +21,8 @@ data PArray i f = i :. Array i f
 instance Ix i => Comonad (PArray i) where -- possibility of parallelism here
     extract (j:.a) = a ! j
     
-    extend f (i :. a)  = i :. my_listArray (bounds a) (f . (:.a) <$> indices a)
-    
+    extend f (i :. a)  = i :. my_listArray (bounds a) (fmap (f . flip (:.) a) (range bds) `using` parLIST rseq)
+      where bds = bounds a
     --f `extend` (j:.a) = j :. listArray bds (fmap (f . flip (:.) a) (range bds) `using` parLIST rseq)
         --where bds = bounds a
     -- http://blog.sigfpe.com/2008/03/comonadic-arrays.html
@@ -66,7 +66,7 @@ lap1 pa @ (i :. a) = do l <- join $ a !? (i - 1)
                         return $ l + r - 2 * c
 
 
-lap2 :: Num f => LocOp (Int, Int) f
+lap2 :: Num f => LocOp (Integer, Integer) f
 lap2 pa@((x,y):.a) = do n <- join $ a !? (x, y + 1)
                         s <- join $ a !? (x, y - 1)
                         e <- join $ a !? (x + 1, y)
@@ -95,43 +95,50 @@ execution bdiff1 a1 = map (map rmJ . toList) $ simulate bdiff1 a1
     where rmJ Nothing = undefined
           rmJ (Just n) = n
 
+repeating :: [a] -> [[a]]
+repeating xs = xs : repeating xs
+
+create2D_array::( Num f)=> Array (Integer, Integer) (Maybe f)
+create2D_array = listArray ((0,0), (9,9))  $ join $ ([replicate 10 (Just 40)] ++ 
+                                               (take 8 (repeating (Just 40 : replicate 8 Nothing ++ [Just 40])))
+                                                ++ [replicate 10 (Just 40)] )                    
+
 main :: IO()
 main = do
-  let b1 = listArray (0, 10) (Just 1 : replicate 9 Nothing ++ [Just 1])
+  -- printing 10000 elements cost 0.2 sec
+  
+  -- 2D code
+  let b2 = create2D_array
+  let bdiff2 = boundStep b2 (fmap (*0.1) . lap2)
+  let a2 = (0,0) :. listArray ((0,0), (9,9)) (repeat $ Just 0)
+  let l2 = execution bdiff2 a2
+  let result = l2 !! 1234
+  print $ result
+  putStrLn "Main Function Done"
+  {- Experiment on 1 2 4  8 core
+2D
+  -- size 100*100  iter 1234 : 
+  -- size 10*10 iter 1234 :  
+  
+-}
+
+  -- 1D code 
+  {-}
+  let b1 = listArray (0, 10000) (Just 40 : replicate 9999 Nothing ++ [Just 40])
   let bdiff1 = boundStep b1 (fmap (*0.1) . lap1)
-  let a1 = 0 :. listArray (0, 10) (replicate 11 $ Just 0)
+  let a1 = 0 :. listArray (0, 10000) (replicate 10001 $ Just 0)
   let l1 = execution bdiff1 a1 
 
-  let result = l1 !! 12
-  print $ result 
+  let result = l1 !! 1234
+  print $ result
   putStrLn "Main Function Done"
+  -}
+{- Experiment on 1 2 4  8 core
+1D
+  -- size 10000  iter 1234 : 14.974 6.819 5.6 6.091
+  -- size 100 iter 1234 :    0.246  0.471
+  
+-} 
 
+ 
 -- use "stack exec -- pfp-final-exe +RTS -N2 -ls" to records event 
-
-{-
--- example 
-
-b1 = listArray (0, 10) (Just 1 : replicate 9 Nothing ++ [Just 1])
-bdiff1 = boundStep b1 (fmap (*0.1) . lap1)
-a1 = 0 :. listArray (0, 10) (replicate 11 $ Just 0)
-l1 = map (map rmJ . toList) $ simulate bdiff1 a1
-    where rmJ Nothing = undefined
-          rmJ (Just n) = n
-
-
-
-b2 = listArray ((0,0), (5,5)) $ join $ [[e,e,e,e,e,e],
-                                        [e,o,o,o,o,e],
-                                        [e,o,o,o,o,e],
-                                        [e,o,o,o,o,e],
-                                        [e,o,o,o,o,e],
-                                        [e,e,e,e,e,e]]
-    where e = Just 1
-          o = Nothing
-bdiff2 = boundStep b2 (fmap (*0.1) . lap2)
-a2 = (0,0) :. listArray ((0,0), (5,5)) (repeat $ Just 0)
-l2 = map (fmap rmJ) $ simulate (boundStep b2 bdiff2) a2
-    where rmJ Nothing = undefined
-          rmJ (Just n) = n
-
- -}
