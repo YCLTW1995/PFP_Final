@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c2430505024ccd0d905e1ae2678842fe4c81a370f216e8c5b5888bf3aa583339
+-- hash: 818712e7072a1be18baa9a42723254a215d386f13bb96f0abdee20f3c02eed0a
 
 name:           pfp-final
 version:        0.1.0.0
@@ -28,6 +28,8 @@ source-repository head
 library
   exposed-modules:
       Lib
+      Lib_RepaVersion
+      Lib_StrategyVersion
   other-modules:
       Paths_pfp_final
   hs-source-dirs:
@@ -39,6 +41,7 @@ library
     , deepseq
     , monad-par
     , parallel
+    , repa
   default-language: Haskell2010
 
 executable pfp-final-exe
@@ -56,6 +59,7 @@ executable pfp-final-exe
     , monad-par
     , parallel
     , pfp-final
+    , repa
   default-language: Haskell2010
 
 test-suite pfp-final-test
@@ -74,4 +78,5 @@ test-suite pfp-final-test
     , monad-par
     , parallel
     , pfp-final
+    , repa
   default-language: Haskell2010
