@@ -14,7 +14,9 @@ module Lib_StrategyVersion
       execution,
       repeating,
       create2D_array,
-      create2D_allzero
+      create1D_array,
+      create2D_allzero,
+      create1D_allzero
     ) where
 
 import Control.Monad(join, mplus)
@@ -74,7 +76,7 @@ type LocOp i f = PArray i (Maybe f) -> Maybe f
 -- I think these can be combined into one using the graph laplacian,
 -- which would also allow for more parallelism
 
-lap1 :: Num f => LocOp Int f
+lap1 :: Num f => LocOp Integer f
 lap1 pa @ (i :. a) = do l <- join $ a !? (i - 1)
                         r <- join $ a !? (i + 1)
                         c <- extract pa
@@ -114,5 +116,11 @@ create2D_array = listArray ((0,0), (9,9))  $ join $ ([replicate 10 (Just 40)] ++
                                                (take 8 (repeating (Just 40 : replicate 8 Nothing ++ [Just 40])))
                                                ++ [replicate 10 (Just 40)] )
 
+create1D_array :: ( Num f)=> Array Integer (Maybe f)
+create1D_array = listArray (0, 9) (Just 40 : replicate 10 Nothing ++ [Just 40])
+
 create2D_allzero::( Num f)=> Integer -> PArray (Integer, Integer) (Maybe f)
 create2D_allzero size = (0,0) :. listArray ((0,0), ((size-1),(size-1))) (repeat $ Just 0)
+
+create1D_allzero::( Num f)=> Integer -> PArray Integer (Maybe f)
+create1D_allzero size = 0 :. listArray (0, size) (repeat $ Just 0)

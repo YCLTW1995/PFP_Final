@@ -26,21 +26,22 @@ main = do
   let a2 = StrategyVersion.create2D_allzero 10
   let l2 = StrategyVersion.execution bdiff2 a2
   let result = l2 !! 1234
+  
   print $ result
   putStrLn "Main Function Done"
 
 -----------------------------------------------------
   -- Strategy 1D code 
-  {-
-  let b1 = listArray (0, 10000) (Just 40 : replicate 9999 Nothing ++ [Just 40])
-  let bdiff1 = boundStep b1 (fmap (*0.1) . lap1)
-  let a1 = 0 :. listArray (0, 10000) (replicate 10001 $ Just 0)
-  let l1 = execution bdiff1 a1 
+  
+  let b1 = StrategyVersion.create1D_array
+  let bdiff1 = StrategyVersion.boundStep b1 (fmap (*0.1) . StrategyVersion.lap1)
+  let a1 = StrategyVersion.create1D_allzero 10
+  let l1 = StrategyVersion.execution bdiff1 a1 
 
   let result = l1 !! 1234
   print $ result
   putStrLn "Main Function Done"
-  -}
+  
 {- Experiment on 1 2 4  8 core
 1D
   -- size 10000  iter 1234 : 14.974 6.819 5.6 6.091
