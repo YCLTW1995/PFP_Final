@@ -1,26 +1,24 @@
+{-# LANGUAGE TypeOperators #-}
+
 import Lib_StrategyVersion as StrategyVersion
 import Lib_RepaVersion as RepaVersion
 
 -- Repa version array declaration
 import qualified Data.Array.Repa as R
 
-b1 = RepaVersion.pad (Just 1) $ R.fromFunction (R.Z R.:. (8 :: Int)) $ const Nothing
-bdiff1 = RepaVersion.boundStep b1 (R.map (*0.1) . RepaVersion.lap')
-a1 = R.fromFunction (R.Z R.:. (10 :: Int)) $ const 0
-l1 = RepaVersion.simulate bdiff1 a1
+line :: Int -> RepaVersion.System R.U (R.Z R.:. Int) Double
+line n = RepaVersion.System iv bounds ham where
+  iv = R.fromFunction (R.Z R.:. (n + 2)) $ const 0
+  bounds = pad (Just 1) $ R.fromFunction (R.Z R.:. n) $ const Nothing
+  ham = pad (0 :: Double) . R.map (*0.1) . lap
 
 
-
-b2 = RepaVersion.pad (Just 1) $ R.fromFunction (R.Z R.:. (8 :: Int) R.:. (8 :: Int)) $ const Nothing
-bdiff2 = RepaVersion.boundStep b2 (R.map (*0.1) . RepaVersion.lap')
-a2 = R.fromFunction (R.Z R.:. (10 :: Int) R.:. (10 :: Int)) $ const 0
-l2 = RepaVersion.simulate bdiff2 a2
 
 
 main :: IO()
 main = do
   -- Repa version
-  putStrLn $ show (l1 !! 10)
+  simulateTo 10 (line 10) >>= print
   ---------------------------------------------------
   -- Strategy 2D code
   let b2 = StrategyVersion.create2D_array 

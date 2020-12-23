@@ -1,18 +1,20 @@
 module Lib_RepaVersion
     ( lap,
-      lap',
       pad,
       Bound,
       Operator,
-      step,
-      boundStep,
-      simulate
+      System(System),
+      simulateTo,
+      simulateToSeq
     ) where
 
 import Data.Maybe(fromMaybe)
 import Control.Monad(guard)
 import qualified Data.Array.Repa as R
+import Data.Array.Repa.Repr.Unboxed(Unbox)
 
+
+type Operator r sh c = R.Array r sh c -> R.Array R.D sh c
 
 reduce :: R.Shape sh => Int -> sh -> sh
 reduce n = R.shapeOfList . map (subtract n) . R.listOfShape
@@ -21,20 +23,11 @@ tlist :: R.Shape sh => Int -> [sh]
 tlist n = map (R.shapeOfList . take n) $ do l <- take n $ iterate (1:) $ 0 : repeat 1
                                             [l, map (2-) l]
 
-lap :: (R.Shape sh, R.Source r c, Num c) => R.Array r sh c -> R.Array R.D sh c
-lap f = foldr ((R.+^) . shift) (R.map (* nrk) $ shift R.unitDim) $ tlist rk where
-    outsh = reduce 2 $ R.extent f
-    rk = R.rank outsh
-    nrk = fromIntegral $ -2 * rk
-    shift s = R.extract s outsh f
-
-lap' :: (R.Shape sh, R.Source r c, Num c) => R.Array r sh c -> R.Array R.D sh c
-lap' f = R.traverse f (reduce 2) llap where
+lap :: (R.Shape sh, R.Source r c, Num c) => Operator r sh c
+lap f = R.traverse f (reduce 2) llap where
     rk = R.rank $ R.extent f
     llap g p = nbhds g p - 2 * g (R.addDim p R.unitDim) * fromIntegral rk
     nbhds g p = sum $ map (g . R.addDim p) $ tlist rk
-
-
 
 
 
@@ -48,15 +41,30 @@ pad p f = R.backpermuteDft padding checkReduce f where
 
 
 
+
+
 type Bound sh c = R.Array R.D sh (Maybe c)
-type Operator r sh c = R.Array r sh c -> R.Array R.D sh c
 
 step :: (R.Shape sh, R.Source r c, Num c) => Operator r sh c -> Operator r sh c
-step t f = f R.+^ pad 0 (t f)
+step t f = f R.+^ t f
 
 boundStep :: (R.Shape sh, R.Source r c, Num c) => Bound sh c -> Operator r sh c -> Operator r sh c
 boundStep b t f = R.zipWith fromMaybe (step t f) b
 
-simulate :: R.Shape sh => Operator R.U sh Float -> R.Array R.D sh Float -> [R.Array R.U sh Float]
-simulate t f = R.computeP f ++ do a <- simulate t f
-                                  R.computeP $ t a
+
+stepTo :: (R.Shape sh, Unbox c, Num c, Monad m) => Int -> Operator R.U sh c -> R.Array R.U sh c -> m (R.Array R.U sh c)
+stepTo n h iv | n == 0 = return iv
+              | otherwise = R.computeP (h iv) >>= stepTo (n-1) h
+
+stepToSeq :: (R.Shape sh, Unbox c, Num c, Monad m) => Int -> Operator R.U sh c -> R.Array R.U sh c -> m (R.Array R.U sh c)
+stepToSeq n h iv | n == 0 = return iv
+                 | otherwise = stepToSeq (n-1) h $ R.computeS (h iv)
+
+
+data System r sh c = System { iv :: R.Array R.D sh c, boundary :: Bound sh c, hamiltonian :: Operator r sh c }
+
+simulateTo :: (R.Shape sh, Unbox c, Num c, Monad m) => Int -> System R.U sh c -> m (R.Array R.U sh c)
+simulateTo n sys@(System iv b h) = R.computeP iv >>= stepTo n (boundStep b h)
+
+simulateToSeq :: (R.Shape sh, Unbox c, Num c, Monad m) => Int -> System R.U sh c -> m (R.Array R.U sh c)
+simulateToSeq n sys@(System iv b h) = stepToSeq n (boundStep b h) $ R.computeS iv
